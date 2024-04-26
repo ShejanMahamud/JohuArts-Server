@@ -25,6 +25,54 @@ const run = async () => {
   try {
     await client.connect();
 
+    const artsCollection = client.db('johuart').collection('artsCollection');
+
+    app.get('/arts',async(req,res)=> {
+      const result = await artsCollection.find().toArray();
+      res.send(result)
+    })
+
+    app.get('/art/:id',async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const result = await artsCollection.findOne(filter);
+      res.send(result)
+    })
+
+    app.get('/arts/:email',async(req,res)=>{
+      const email = req.params.email;
+      const filter = {user_email: email}
+      const result = await artsCollection.find(filter).toArray();
+      res.send(result)
+    })
+
+    app.post('/arts',async(req,res)=>{
+      const art = req.body;
+      const result = await artsCollection.insertOne(art)
+      res.send(result)
+    })
+
+    app.patch('/arts/:id',async(req,res)=>{
+      const id = req.params.id;
+      const art = req.body;
+      const filter = {_id: new ObjectId(id)};
+      const updatedArt = {
+        $set:{
+          image : art?.image,
+          item_name: art?.item_name,
+          subcategory_name: art?.subcategory_name,
+          short_description: art?.short_description,
+          rating: art?.rating,
+          customization: art?.customization,
+          processing_time: art?.processing_time,
+          stock_status: art?.stock_status,
+          price: art?.price
+        }
+      }
+      const result = await artsCollection.updateOne(filter,updatedArt);
+      res.send(result)
+    })
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
