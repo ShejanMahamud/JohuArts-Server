@@ -23,7 +23,7 @@ const client = new MongoClient(mongoURI, {
 
 const run = async () => {
   try {
-    await client.connect();
+    // await client.connect();
 
     const artsCollection = client.db('johuart').collection('artsCollection');
 
@@ -73,10 +73,18 @@ const run = async () => {
       res.send(result)
     })
 
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    app.delete('/art/:id',async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+
+      const result = await artsCollection.deleteOne(filter)
+      res.send(result)
+    })
+
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
   }
 };
