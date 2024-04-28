@@ -49,6 +49,13 @@ const run = async () => {
       res.send(result);
     });
 
+    app.get('/customization/:customization',async(req,res)=>{
+      const customization = req.params.customization;
+      const filter = {customization:customization};
+      const result = await artsCollection.find(filter).toArray();
+      res.send(result)
+    })
+
     app.get("/categories", async (req, res) => {
       const result = await artsCategoriesCollection.find().toArray();
       res.send(result);
