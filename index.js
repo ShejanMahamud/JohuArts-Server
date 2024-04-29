@@ -29,7 +29,7 @@ const run = async () => {
     const artsCategoriesCollection = client
       .db("johuart")
       .collection("categoriesCollection");
-
+    const usersCollection = client.db("johuart").collection("usersCollection");
     app.get("/arts", async (req, res) => {
       const result = await artsCollection.find().toArray();
       res.send(result);
@@ -48,6 +48,11 @@ const run = async () => {
       const result = await artsCollection.find(filter).toArray();
       res.send(result);
     });
+
+    app.get('/users', async(req,res)=>{
+      const result = await usersCollection.find().toArray();
+      res.send(result)
+    })
 
     app.get('/customization/:customization',async(req,res)=>{
       const customization = req.params.customization;
@@ -81,6 +86,12 @@ const run = async () => {
       await artsCategoriesCollection.findOneAndUpdate(filter,updatedStock)
       res.send(result);
     });
+
+    app.post('/users',async(req,res)=>{
+      const user = req.body;
+      const result = await usersCollection.insertOne(user);
+      res.send(result)
+    })
 
     app.patch("/arts/:id", async (req, res) => {
       const id = req.params.id;
