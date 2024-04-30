@@ -46,7 +46,7 @@ const run = async () => {
       const email = req.params.email;
       const filter = { user_email: email };
       const result = await artsCollection.find(filter).toArray();
-      res.send(result);
+      res.send(result)
     });
 
     app.get('/users', async(req,res)=>{
