@@ -54,12 +54,13 @@ const run = async () => {
       res.send(result)
     })
 
-    app.get('/customization/:customization',async(req,res)=>{
+    app.get('/customization/:email/:customization', async (req, res) => {
+      const email = req.params.email;
       const customization = req.params.customization;
-      const filter = {customization:customization};
+      const filter = { user_email: email, customization: customization };
       const result = await artsCollection.find(filter).toArray();
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     app.get("/categories", async (req, res) => {
       const result = await artsCategoriesCollection.find().toArray();
