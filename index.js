@@ -4,13 +4,35 @@ require("dotenv").config();
 const port = process.env.PORT || 4533;
 const mongoURI = process.env.MONGO_URI;
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 
 //app
 const app = express();
 
 //middlewares
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+//custom middlewares
+
+const verifyToken = async (req,res,next) => {
+  const token = req.cookies?.token;
+  if(!token){
+    return res.status(401).send({message: 'Forbidden'})
+  }
+  jwt.verify(token,process.env.SECRET_ACCESS_TOKEN,(error, decoded)=>{
+    if(error){
+      return res.status(401).send({message: 'Unauthorized Request!'})
+    }
+    req.user = decoded;
+    next();
+  })
+}
 
 //mongo client
 const client = new MongoClient(mongoURI, {
@@ -21,17 +43,45 @@ const client = new MongoClient(mongoURI, {
   },
 });
 
+
 const run = async () => {
   try {
-    // await client.connect();
+    await client.connect();
 
     const artsCollection = client.db("johuart").collection("artsCollection");
     const artsCategoriesCollection = client
       .db("johuart")
       .collection("categoriesCollection");
     const usersCollection = client.db("johuart").collection("usersCollection");
-    app.get("/arts", async (req, res) => {
-      const result = await artsCollection.find().toArray();
+
+
+    //Auth related Api
+
+    app.post('/jwt', async(req,res)=>{
+      const user = req.body;
+      const token = jwt.sign(user,process.env.SECRET_ACCESS_TOKEN,{ expiresIn: '1h' })
+      res
+      .cookie('token',token,{
+        httpOnly: true,
+        secure: false,
+      })
+      .send({success:true})
+    })
+
+    //Arts Related Api
+    app.get("/arts", verifyToken, async (req, res) => {
+      if(req.query.email !== req.user.email){
+        return res.status(403).send({message: 'Forbidden'})
+      }
+      let query = {};
+      if (req.query?.email) {
+        query.user_email = req.query.email;
+      }
+    
+      if (req.query?.customization) {
+        query.customization = req.query.customization;
+      }
+      const result = await artsCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -42,25 +92,10 @@ const run = async () => {
       res.send(result);
     });
 
-    app.get("/arts/:email", async (req, res) => {
-      const email = req.params.email;
-      const filter = { user_email: email };
-      const result = await artsCollection.find(filter).toArray();
-      res.send(result)
-    });
-
     app.get('/users', async(req,res)=>{
       const result = await usersCollection.find().toArray();
       res.send(result)
     })
-
-    app.get('/customization/:email/:customization', async (req, res) => {
-      const email = req.params.email;
-      const customization = req.params.customization;
-      const filter = { user_email: email, customization: customization };
-      const result = await artsCollection.find(filter).toArray();
-      res.send(result);
-    });
 
     app.get("/categories", async (req, res) => {
       const result = await artsCategoriesCollection.find().toArray();
@@ -135,10 +170,10 @@ const run = async () => {
       res.send(result);
     });
 
-    // await client.db("admin").command({ ping: 1 });
-    // console.log(
-    //   "Pinged your deployment. You successfully connected to MongoDB!"
-    // );
+    await client.db("admin").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
   } finally {
   }
 };
